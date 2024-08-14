@@ -1,12 +1,12 @@
 package com.example;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.io.IOException; // Add this import
 
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -15,7 +15,7 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext;
 
 public class ApiMonitorJob {
-    
+
     public static class ApiSourceFunction implements SourceFunction<String> {
         private final String url;
         private volatile boolean isRunning = true;
@@ -55,10 +55,12 @@ public class ApiMonitorJob {
                             while ((line = reader.readLine()) != null) {
                                 response.append(line);
                             }
-                            ctx.collect(response.toString());
+                            String responseBody = response.toString();
+                            ctx.collect(responseBody);
+                            System.out.println("Sent record: " + responseBody);
                         }
                     } else {
-                        throw new IOException("Server returned HTTP response code: " + responseCode);
+                        System.err.println("Server returned HTTP response code: " + responseCode);
                     }
 
                 } catch (Exception e) {
@@ -83,7 +85,7 @@ public class ApiMonitorJob {
         // Create the data stream
         DataStream<String> dataStream = env.addSource(apiSource);
 
-        // Print the data stream
+        // Print the data stream to the console
         dataStream.addSink(new SinkFunction<String>() {
             @Override
             public void invoke(String value, Context context) {
