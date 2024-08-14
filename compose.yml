@@ -1,0 +1,45 @@
+services:
+  cassandra:
+    image: 'cassandra:latest'
+    environment:
+      - 'CASSANDRA_DC=datacenter1'
+      - 'CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch'
+      - 'CASSANDRA_LISTEN_ADDRESS=cassandra'
+      - 'CASSANDRA_BROADCAST_ADDRESS=cassandra'
+    ports:
+      - '9042:9042'
+    networks:
+      - test
+
+  jobmanager:
+    image: flink:latest
+    container_name: jobmanager
+    ports:
+      - "8081:8081"
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+    command: jobmanager
+    networks:
+      - test
+
+  taskmanager:
+    image: flink:latest
+    container_name: taskmanager
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+    depends_on:
+      - jobmanager
+    command: taskmanager
+    networks:
+      - test
+
+  fastapi:
+    build: .
+    ports:
+      - "8000:8000"
+    networks:
+      - test
+
+networks:
+  test:
+    driver: bridge
